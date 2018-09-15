@@ -16,8 +16,67 @@ app.set('view engine', 'jade');
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
+//The first parameter of cookieParser it's Secret-key
+app.use(cookieParser('1234-4567-4567-1231'));
 app.use(express.static(path.join(__dirname, 'public')));
+
+
+function auth(req,res, next)
+{
+  console.log(req.signedCookies);
+
+  if(!req.signedCookies.user)
+  {
+    var authheader = req.headers.authorization;
+    console.log(authheader);
+    if (authheader)
+    {
+      console.log(req.headers);
+      var auth = new Buffer(authheader.split(' ')[1],'base64').toString().split(':');
+      
+      var username = auth[0];
+      var password = auth[1];
+      
+      if(username === 'admin' && password === 'passwor')
+      {
+        res.cookie('user', 'admin',{signed:true});
+        next();
+      }
+      else
+      {
+        var err = new Error('You are not authenticated');
+        res.setHeader('WWW-Authenticate','Basic');
+        err.status = 401;
+        return next(err);
+      }
+    }else
+    {
+      var err = new Error('You are not authenticated');
+      res.setHeader('WWW-Authenticate','Basic');
+      err.status = 401;
+      return next(err);
+    }
+
+
+  }else
+  {
+    if(req.signedCookies.user === 'admin')
+    {
+      next();
+    }
+    else{
+      var err = new Error('You are not authenticated');
+      res.setHeader('WWW-Authenticate','Basic');
+      err.status = 401;
+      return next(err);
+    }
+  }
+
+
+  
+}
+app.use(auth);
+
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
