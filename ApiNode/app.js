@@ -36,6 +36,9 @@ app.use(Session({
   user:'ss'
 }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+
+
 /**
 
 function auth_cockie(req,res, next)
